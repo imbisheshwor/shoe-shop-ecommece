@@ -1,19 +1,25 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { IoMdHeartEmpty } from "react-icons/io";
 import Wrapper from "@/components/Wrapper";
 import ReactMarkdown from "react-markdown";
 import ProductDetailsCarousel from '@/components/ProductDetailsCarousel';
 import RelatedProducts from '@/components/ReleatedProducts';
+import { fetchDataFromApi } from '@/utils/api';
+import { getDiscountedPricePercentage } from '@/utils/helper'
 
 
-const ProductDetails = () => {
+const ProductDetails = ({product, products}) => {
+
+    const [selectedSize, setSelectedSize] = useState();
+    const [showError, setShowError] = useState(true);
+    const p = product?.data?.[0]?.attributes;
   return (
     <div className="w-full md:py-20" >
        <Wrapper>
                 <div className="flex flex-col lg:flex-row md:px-10 gap-[50px] lg:gap-[100px]">
                     {/* left column start */}
                     <div className="w-full md:w-auto flex-[1.5] max-w-[500px] lg:max-w-full mx-auto lg:mx-0">
-                        <ProductDetailsCarousel/>
+                        <ProductDetailsCarousel images={p.image.data}/>
                         {/* <ProductDetailsCarousel images={p.image.data} /> */}
                     </div>
                     {/* left column end */}
@@ -22,21 +28,20 @@ const ProductDetails = () => {
                     <div className="flex-[1] py-3">
                         {/* PRODUCT TITLE */}
                         <div className="text-[34px] font-semibold mb-2 leading-tight">
-                            {/* {p.name} */} Jordan retro 6 G
+                            {p?.name}
                         </div>
 
                         {/* PRODUCT SUBTITLE */}
                         <div className="text-lg font-semibold mb-5">
-                            {/* {p.subtitle} */} men &apos;s Golf Shoes
+                            {p?.subtitle} 
                         </div>
 
                         {/* PRODUCT PRICE */}
                         <div className="flex items-center">
                             <p className="mr-2 text-lg font-semibold">
-                                {/* MRP : &#8377;{p.price} */}
-                                MRP : &#8377;1200.00
+                                MRP : &#8377;{p?.price}
                             </p>
-                            {/* {p.original_price && (
+                            {p.original_price && (
                                 <>
                                     <p className="text-base  font-medium line-through">
                                         &#8377;{p.original_price}
@@ -49,7 +54,7 @@ const ProductDetails = () => {
                                         % off
                                     </p>
                                 </>
-                            )} */}
+                            )}
                         </div>
 
                         <div className="text-md font-medium text-black/[0.5]">
@@ -76,7 +81,21 @@ const ProductDetails = () => {
                             <div
                                 id="sizesGrid"
                                 className="grid grid-cols-3 gap-2"
-                            >
+                            >   
+                                {p.size.data.map((item,i) => (
+                                    <div
+                                    key={i}
+                                    className={`border round-md text-center py-3 font-medium
+                                    ${item.enabled ? 'hover:border-black cursor-pointer' : 'cursor-not-allowed bg-black/[0.1] opacity-50'}
+                                    cursor-not-allowed bg-black/[0.1] opacity-50`}
+                                    onClick={()=>{
+                                        setSelectedSize(item.size)
+                                        setShowError(false)
+                                    }}
+                                    >
+                                        {item.size}
+                                    </div>
+                                ))}
                                 {/* {p.size.data.map((item, i) => (
                                     <div
                                         key={i}
@@ -101,11 +120,11 @@ const ProductDetails = () => {
                             {/* SIZE END */}
 
                             {/* SHOW ERROR START */}
-                            {/* {showError && (
+                            {showError && (
                                 <div className="text-red-600 mt-1">
                                     Size selection is required
                                 </div>
-                            )} */}
+                            )}
                             {/* SHOW ERROR END */}
                         </div>
                         {/* PRODUCT SIZE RANGE END */}
@@ -159,10 +178,41 @@ const ProductDetails = () => {
                 </div>
 
                 {/* <RelatedProducts products={products} /> */}
-                <RelatedProducts  />
+                {/* <RelatedProducts  /> */}
             </Wrapper>
     </div>
   )
 }
 
 export default ProductDetails
+
+export async function getStaticPaths() {
+    const products = await fetchDataFromApi("/api/products?populate=*");
+  
+    const paths = products.data.map((p) => ({
+      params: {
+        slug: p.attributes.slug,
+      },
+    }));
+  
+    return {
+      paths,
+      fallback: false,
+    };
+  }
+
+  export async function getStaticProps({ params: { slug } }) {
+    const product = await fetchDataFromApi(
+      `/api/products?populate=*&filters[slug][$eq]=${slug}`
+    );
+    const products = await fetchDataFromApi(
+      `/api/products?populate=*&[filters][slug][$ne]=${slug}`
+    );
+  
+    return {
+      props: {
+        product,
+        products,
+      },
+    };
+  }

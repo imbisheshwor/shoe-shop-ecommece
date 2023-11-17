@@ -1,10 +1,12 @@
 import HeroBanner from "@/components/HeroBanner";
 import Wrapper from "@/components/Wrapper";
 import ProductCard from "@/components/ProductCard";
+import { fetchDataFromApi } from "@/utils/api";
 
-export default function Home() {
-    return <main className="">
-        <HeroBanner /> 
+export default function Home({ products }) {
+ 
+    return <main >
+        <HeroBanner />
         <Wrapper>
            {/* heading and paragaph start */}
                 <div className="text-center max-w-[800px] mx-auto my-[50px] md:my-[80px]">
@@ -20,18 +22,29 @@ export default function Home() {
             {/* heading and paragaph end */}
             {/* product grid  */}
                 <div  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 my-14 px-5 md:px-0">
-                    <ProductCard slug="jordan" />
-                    <ProductCard slug="snikers"/>
+                    {products?.data?.map((product) => (
+
+                    <ProductCard slug="jordan" key={product?.id} data= {product}/>
+                    ))}
+                    {/* <ProductCard slug="snikers"/>
                     <ProductCard slug="converse"/>
                     <ProductCard slug="boot"/>
                     <ProductCard slug="party"/>
                     <ProductCard slug="choose"/>
                     <ProductCard slug="another"/>
                     <ProductCard slug="unknown"/>
-                    <ProductCard slug="test"/>
+                    <ProductCard slug="test"/> */}
                 </div>
             {/* product grid end  */}
 
         </Wrapper>
     </main>;
+}
+
+export async function getStaticProps() {
+    const products = await fetchDataFromApi("/api/products?populate=*");
+
+    return {
+        props: { products },
+    };
 }
